@@ -13,7 +13,7 @@ import pandas as pd
 import data as dt
 from datetime import datetime
 import MetaTrader5 as mt5
-from functions import historicos
+from functions import historicos, moving_average, boolinger_bands, trading
 
 # -- TEST 1 : 
 usuario = 'Daniel Garcia'
@@ -27,8 +27,22 @@ end_date_train = datetime(2019, 1, 1)
 start_date_test = datetime(2019, 2, 1)
 end_date_test = datetime(2020, 2, 1)
 
-datos = historicos(meta_path, login_count, password_count, server_name,
-                   start_date_train, end_date_train, usuario, symbol)
-print(datos)
+datos_train = historicos(meta_path, login_count, password_count, server_name,
+                         start_date_train, end_date_train, usuario, symbol)
+#
+# ma = moving_average(meta_path, login_count, password_count, server_name,
+#                      start_date_train, end_date_train, usuario, symbol)
+#
+# bb = boolinger_bands(meta_path, login_count, password_count, server_name,
+#                      start_date_train, end_date_train, usuario, symbol)
+
+resultado = trading(meta_path, login_count, password_count, server_name,
+                    start_date_train, end_date_train, usuario, symbol)
+
+
+# print(datos_train)
+# print(ma)
+# print(bb)
+print(resultado)
 
 
