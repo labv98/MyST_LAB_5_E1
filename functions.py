@@ -11,20 +11,21 @@
 
 import pandas as pd
 import matplotlib.pyplot as plt
-import MetaTrader5 as mt5
+#import MetaTrader5 as mt5
 
 
-def historicos(path, login, password, server, start_date, end_date, save_name, symbol):
-    connection = mt5.initialize(path=path, login=login, password=password, server=server)
-    tuplas = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M12, start_date, end_date)
-    df = pd.DataFrame(tuplas)
-    df['time'] = pd.to_datetime(df['time'], unit='s')
-    df.to_excel("Historicos.xlsx")
-    return df
+#def historicos(path, login, password, server, start_date, end_date, save_name, symbol):
+#    connection = mt5.initialize(path=path, login=login, password=password, server=server)
+#    tuplas = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M12, start_date, end_date)
+#    df = pd.DataFrame(tuplas)
+#    df['time'] = pd.to_datetime(df['time'], unit='s')
+#    df.to_excel("Historicos.xlsx")
+#    return df
 
 
 def moving_average(path, login, password, server, start_date, end_date, save_name, symbol):
-    df = historicos(path, login, password, server, start_date, end_date, save_name, symbol)
+    #df = historicos(path, login, password, server, start_date, end_date, save_name, symbol)
+    df = pd.read_excel('Historicos.xlsx')
     df['moving_average_short'] = df['close'].rolling(window=20).mean()
     df['moving_average_long'] = df['close'].rolling(window=50).mean()
 
@@ -37,7 +38,8 @@ def moving_average(path, login, password, server, start_date, end_date, save_nam
 
 
 def boolinger_bands(path, login, password, server, start_date, end_date, save_name, symbol):
-    df = historicos(path, login, password, server, start_date, end_date, save_name, symbol)
+    #df = historicos(path, login, password, server, start_date, end_date, save_name, symbol)
+    df = pd.read_excel('Historicos.xlsx')
     df['moving_average'] = df['close'].rolling(window=20).mean()
     df['standar_deviation'] = df['close'].rolling(window=20).std()
     df['boolinger_upper'] = df['moving_average'] + (df['standar_deviation'] * 2)
