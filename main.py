@@ -11,38 +11,38 @@
 
 import pandas as pd
 import data as dt
+from datetime import datetime
+import MetaTrader5 as mt5
+from functions import historicos, moving_average, boolinger_bands, trading
 
 # -- TEST 1 : 
-# verify that the script is being read
-print(dt.dict_test)
+usuario = 'Daniel Garcia'
+symbol = 'EURUSD'
+meta_path = 'C:\Program Files\MetaTrader 5 Terminal\\terminal64.exe'
+login_count = 5400339 #'Bruno': 5400338 #'Chelsi': 5400342 #'Daniel': 5400339
+password_count = '2qeDQrhu' #'Bruno': 'LHFFV4Nh' #'Chelsi': 'XN1xho9d' #'Daniel': '2qeDQrhu'
+server_name = 'FxPro-MT5'
+start_date_train = datetime(2018, 1, 1)
+end_date_train = datetime(2019, 1, 1)
+start_date_test = datetime(2019, 2, 1)
+end_date_test = datetime(2020, 2, 1)
 
-# -- TEST 2 :
-# verify that installed pandas module works correctly
-df_dict_test = pd.DataFrame(dt.dict_test, index=[0, 1])
-print(df_dict_test)
+datos_train = historicos(meta_path, login_count, password_count, server_name,
+                         start_date_train, end_date_train, usuario, symbol)
+#
+# ma = moving_average(meta_path, login_count, password_count, server_name,
+#                      start_date_train, end_date_train, usuario, symbol)
+#
+# bb = boolinger_bands(meta_path, login_count, password_count, server_name,
+#                      start_date_train, end_date_train, usuario, symbol)
 
-# -- TEST 3 :
-# verify you can use plotly and visualize plots in jupyter notebook
+resultado = trading(meta_path, login_count, password_count, server_name,
+                    start_date_train, end_date_train, usuario, symbol)
 
-import chart_studio.plotly as py   # various tools (jupyter offline print)
-import plotly.graph_objects as go  # plotting engine
 
-# example data
-df = pd.DataFrame({'column_a': [1, 2, 3, 4, 5], 'column_b': [1, 2, 3, 4, 5]})
-# basic plotly plot
-data = [go.Bar(x=df['column_a'], y=df['column_b'])]
-# instruction to view it inside jupyter
-py.iplot(data, filename='jupyter-basic_bar')
-# (alternatively) instruction to view it in web app of plotly
-# py.plot(data)
+# print(datos_train)
+# print(ma)
+# print(bb)
+print(resultado)
 
-# -- TEST 4 :
-# verify you can use plotly and visualize plots in web browser locally
 
-import plotly.io as pio            # to define input-output of plots
-pio.renderers.default = "browser"  # to render the plot locally in your default web browser
-
-# basic plotly plot
-plot_data = go.Figure(go.Bar(x=df['column_a'], y=df['column_b']))
-# instruction to view it in specified render (in this case browser)
-plot_data.show()
