@@ -11,16 +11,16 @@
 
 import pandas as pd
 import matplotlib.pyplot as plt
-#import MetaTrader5 as mt5
+import MetaTrader5 as mt5
 
 
-#def historicos(path, login, password, server, start_date, end_date, save_name, symbol):
-#    connection = mt5.initialize(path=path, login=login, password=password, server=server)
-#    tuplas = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M12, start_date, end_date)
-#    df = pd.DataFrame(tuplas)
-#    df['time'] = pd.to_datetime(df['time'], unit='s')
-#    df.to_excel("Historicos.xlsx")
-#    return df
+def historicos(path, login, password, server, start_date, end_date, save_name, symbol):
+    connection = mt5.initialize(path=path, login=login, password=password, server=server)
+    tuplas = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M15, start_date, end_date)
+    df = pd.DataFrame(tuplas)
+    df['time'] = pd.to_datetime(df['time'], unit='s')
+    df.to_excel("Historicos_test.xlsx")
+    return df
 
 
 def moving_average(path, login, password, server, start_date, end_date, save_name, symbol):
