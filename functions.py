@@ -10,10 +10,10 @@
 """
 
 import pandas as pd
-<<<<<<< HEAD
+
 import matplotlib.pyplot as plt
 #import MetaTrader5 as mt5
-=======
+
 import numpy as np
 import datetime
 from datetime import date
@@ -22,7 +22,6 @@ import plotly.graph_objects as go
 import plotly.express as px
 import pyswarms as ps
 # import MetaTrader5 as mt5
->>>>>>> main
 
 
 #def historicos(path, login, password, server, start_date, end_date, save_name, symbol):
