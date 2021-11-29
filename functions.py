@@ -14,7 +14,6 @@ import matplotlib.pyplot as plt
 #import MetaTrader5 as mt5
 
 
-<<<<<<< HEAD
 #def historicos(path, login, password, server, start_date, end_date, save_name, symbol):
 #    connection = mt5.initialize(path=path, login=login, password=password, server=server)
 #    tuplas = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M12, start_date, end_date)
@@ -22,7 +21,7 @@ import matplotlib.pyplot as plt
 #    df['time'] = pd.to_datetime(df['time'], unit='s')
 #    df.to_excel("Historicos.xlsx")
 #    return df
-=======
+
 def historicos(path, login, password, server, start_date_backtest, end_date_backtest,
                start_date_prueba, end_date_prueba, symbol):
     connection = mt5.initialize(path=path, login=login, password=password, server=server)
@@ -35,7 +34,6 @@ def historicos(path, login, password, server, start_date_backtest, end_date_back
     df_prueba['time'] = pd.to_datetime(df_prueba['time'], unit='s')
     df_prueba.to_excel("Historicos_prueba.xlsx")
     return df_backtest, df_prueba
->>>>>>> Dani
 
 
 def moving_average(path, login, password, server, start_date, end_date, save_name, symbol):
