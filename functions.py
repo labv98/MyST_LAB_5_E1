@@ -10,6 +10,10 @@
 """
 
 import pandas as pd
+
+import matplotlib.pyplot as plt
+#import MetaTrader5 as mt5
+
 import numpy as np
 import datetime
 from datetime import date
@@ -17,7 +21,7 @@ import time
 import plotly.graph_objects as go
 import plotly.express as px
 import pyswarms as ps
-# import MetaTrader5 as mt5
+import MetaTrader5 as mt5
 
 
 def historicos(path, login, password, server, start_date_backtest, end_date_backtest,
@@ -33,10 +37,11 @@ def historicos(path, login, password, server, start_date_backtest, end_date_back
     df_prueba.to_excel("Historicos_prueba.xlsx")
     return df_backtest, df_prueba
 
+
 def cost_function(variable):
     num_acciones = variable.item(0)
     pp_ma = variable.item(1)
-    pg_ma = pp_ma
+    pg_ma = pp_ma / 2
     w_bb = int(variable.item(2))
     sd_bb = variable.item(3)
     print(num_acciones, pp_ma, pg_ma, w_bb, sd_bb)
@@ -297,19 +302,11 @@ def cost_function(variable):
     df_ma_bb['Date_TP_final'] = np.where(df_ma_bb['Date_TP'] == 0, df_ma_bb['Date_TP_bb'], df_ma_bb['Date_TP'])
     # Profit acum
     df_ma_bb['Profit_final_acum'] = df_ma_bb['Profit_final'].cumsum()
-    # Sharpe Ratio
-    ret = df_ma_bb['Profit_final_acum'].pct_change().dropna()
-    mean_ret = np.mean(ret)
-    rf = 0.05
-    desvest = np.std(ret)
-    sharpe_rat = (mean_ret - rf) / desvest
-    print(sharpe_rat)
-    return sharpe_rat * -1
+    return -df_ma_bb['Profit_final_acum'].iloc[-1]
 
 
-def function(num_acciones, pp_ma, w_bb, sd_bb, data):
-
-    pg_ma = pp_ma
+def function(num_acciones, pp_ma, w_bb, sd_bb, data, grafic=True):
+    pg_ma = pp_ma / 2
     w_bb = int(w_bb)
     print(num_acciones, pp_ma, pg_ma, w_bb, sd_bb)
 
@@ -330,36 +327,25 @@ def function(num_acciones, pp_ma, w_bb, sd_bb, data):
     bb_df['boolinger_lower'] = bb_df['moving_average'] - (bb_df['standar_deviation'] * sd_bb)
 
     ###Graficar
-
     #Moving Average 
     fig1 = go.Figure()
-
-    fig1.add_trace(go.Scatter(x= ma_df.time , y= ma_df.close , mode='lines', name='Close',
-                        line=dict(color='gold', width=4)))
-
-    fig1.add_trace(go.Scatter(x= ma_df.time, y= ma_df.moving_average_short , mode='lines', name='Short Moving Average',
-                        line=dict(color='firebrick', width=3)))
-
-    fig1.add_trace(go.Scatter(x= ma_df.time, y= ma_df.moving_average_long , mode='lines', name='Long Moving Average',
-                        line=dict(color='forestgreen', width=3)))
-    
+    fig1.add_trace(go.Scatter(x=ma_df.time, y=ma_df.close,  mode='lines', name='Close',
+                              line=dict(color='gold', width=4)))
+    fig1.add_trace(go.Scatter(x=ma_df.time, y=ma_df.moving_average_short, mode='lines', name='Short Moving Average',
+                              line=dict(color='firebrick', width=3)))
+    fig1.add_trace(go.Scatter(x=ma_df.time, y=ma_df.moving_average_long, mode='lines', name='Long Moving Average',
+                              line=dict(color='forestgreen', width=3)))
     fig1.update_layout(title='Moving Average', xaxis_title='Date', yaxis_title='Values')
 
     #Bollinger Bands
-
     fig2 = go.Figure()
-
-    fig2.add_trace(go.Scatter(x= bb_df.time , y= bb_df.close , mode='lines', name='Close',
-                        line=dict(color='gold', width=4)))
-
-    fig2.add_trace(go.Scatter(x= bb_df.time, y= bb_df.boolinger_upper , mode='lines', name='Bollinger Upper',
-                        line=dict(color='forestgreen', width=3)))
-    
-    fig2.add_trace(go.Scatter(x= bb_df.time, y= bb_df.boolinger_lower , mode='lines', name='Bollinger Close',
-                        line=dict(color='olive', width=3)))
-    
-    fig2.update_layout(title='Bollinger Bands', xaxis_title ='Date', yaxis_title='Values')
-
+    fig2.add_trace(go.Scatter(x=bb_df.time, y=bb_df.close, mode='lines', name='Close',
+                              line=dict(color='gold', width=4)))
+    fig2.add_trace(go.Scatter(x=bb_df.time, y=bb_df.boolinger_upper, mode='lines', name='Bollinger Upper',
+                              line=dict(color='forestgreen', width=3)))
+    fig2.add_trace(go.Scatter(x=bb_df.time, y=bb_df.boolinger_lower, mode='lines', name='Bollinger Close',
+                              line=dict(color='olive', width=3)))
+    fig2.update_layout(title='Bollinger Bands', xaxis_title='Date', yaxis_title='Values')
 
     ### Constantes
     Capital = 100000
@@ -615,52 +601,54 @@ def function(num_acciones, pp_ma, w_bb, sd_bb, data):
     # Drawup
     drawup_cap = df_ma_bb['Profit_final'].max()
 
-    est_mad = {'Métrica' : ['Sharpe', 'Drawdown','Drawup'],
-               '' : ['Cantidad','DrawDown $ (capital)','DrawUp $ (capital)'],
-               'Valor' : [sharpe_rat, drawdown_cap, drawup_cap],
-               'Descripción' : ['Sharpe Ratio Fórmula Original',
+    est_mad = {'Métrica': ['Sharpe', 'Drawdown', 'Drawup'],
+               '': ['Cantidad', 'DrawDown $ (capital)', 'DrawUp $ (capital)'],
+               'Valor': [sharpe_rat, drawdown_cap, drawup_cap],
+               'Descripción': ['Sharpe Ratio Fórmula Original',
                                'Máxima pérdida flotante registrada',
-                                'Máxima ganancia flotante registrada']
-              }
+                               'Máxima ganancia flotante registrada']
+               }
     # Crear DataFrame
     df_est_mad = pd.DataFrame(est_mad)
 
     # Arreglar la tabla
+    df_ma_bb['Operation_final'] = np.where(df_ma_bb['Operation'] == '0', df_ma_bb['Operation_bb'], df_ma_bb['Operation'])
+    df_ma_bb_profit = df_ma_bb[['time', 'Operation_final', 'Profit_final', 'Profit_final_acum']]
+    if grafic:
+        return df_ma_bb['Profit_final_acum'].iloc[-1], df_est_mad, df_ma_bb, df_ma_bb_profit, fig1.show(), fig2.show()
+    else:
+        return df_ma_bb['Profit_final_acum'].iloc[-1], df_est_mad, df_ma_bb, df_ma_bb_profit
 
-    
-    df_ma_bb['Operation_final']= np.where(df_ma_bb['Operation']=='0',df_ma_bb['Operation_bb'],df_ma_bb['Operation'])
 
-    df_ma_bb_profit= df_ma_bb[['time','Operation_final','Profit_final','Profit_final_acum']]
-
-    return sharpe_rat, df_est_mad, df_ma_bb, df_ma_bb_profit, fig1.show(), fig2.show()
-
-def resultados_heuristicos():
+def resultados_heuristicos(data='backtest'):
+    # Time of execution
+    start_time = time.time()
     resultados = []
-    for n_a in range(1000, 10000, 1000):
-        for p_ma in np.arange(0.01, 0.05, 0.01):
-            for w_b in range(40, 100, 10):
-                for d_b in range(1, 4, 1):
-                    resultados.append(cost_function(n_a, p_ma, w_b, d_b))
-                    print(n_a, p_ma, w_b, d_b)
+    for n_a in range(1000, 5000, 1000):
+        for p_ma in np.arange(0.01, 0.03, 0.01):
+            for w_b in range(20, 50, 10):
+                for d_b in range(1, 3, 1):
+                    resultados.append(function(n_a, p_ma, w_b, d_b, data, grafic=False)[0])
                     print(resultados[-1])
-    
-    # Plot result heuristic
-    fig = go.Figure([go.Scatter( y= resultados,
-                            line = dict(color='teal', width=3))])
-    fig.update_layout(title='Heuristico',
-                    xaxis_title='Iteration',
-                    yaxis_title='Values')
 
-    return resultados,fig.show()
+    # Plot result heuristic
+    fig = go.Figure([go.Scatter(y=resultados,
+                                line=dict(color='teal', width=3))])
+    fig.update_layout(title='Heuristico',
+                      xaxis_title='Iteration',
+                      yaxis_title='Values')
+    final_time = time.time() - start_time
+    print(final_time)
+    return resultados, fig.show()
+
 
 def five_visualizations(df_ma_bb):
-    
     #Precio
     fig_precio = go.Figure()
-    fig_precio.add_trace(go.Scatter(x= df_ma_bb['time'], y= df_ma_bb['close'],
-                        mode='lines',
-                        name='Close moving average',
-                        line=dict(color='royalblue', width=3)))
+    fig_precio.add_trace(go.Scatter(x=df_ma_bb['time'], y=df_ma_bb['close'],
+                                    mode='lines',
+                                    name='Close moving average',
+                                    line=dict(color='royalblue', width=3)))
 
     fig_precio.update_xaxes(
         rangeslider_visible=True,
@@ -676,115 +664,113 @@ def five_visualizations(df_ma_bb):
     )
 
     # EXPOSURE
-    fig_exposure = go.Figure([go.Scatter(x= df_ma_bb['time'], y= df_ma_bb['exposure_final'],
-                            line = dict(color='teal', width=3))])
+    fig_exposure = go.Figure([go.Scatter(x=df_ma_bb['time'], y=df_ma_bb['exposure_final'],
+                                         line=dict(color='teal', width=3))])
     fig_exposure.update_layout(title='Exposure',
-                    xaxis_title='Date',
-                    yaxis_title='$')
+                               xaxis_title='Date',
+                               yaxis_title='$')
     
     # Profit acum
-    fig_profacum = go.Figure([go.Scatter(x= df_ma_bb['time'], y= df_ma_bb['Profit_final_acum'],
-                            line = dict(color='indigo', width=3))])
+    fig_profacum = go.Figure([go.Scatter(x=df_ma_bb['time'], y=df_ma_bb['Profit_final_acum'],
+                                         line=dict(color='indigo', width=3))])
     fig_profacum.update_layout(title='Profit Acumulado',
-                    xaxis_title='Date',
-                    yaxis_title='$')
-    
+                               xaxis_title='Date',
+                               yaxis_title='$')
+
     ########
-    ventas_ma = df_ma_bb[df_ma_bb['Operation']=='Vender']
-    ventas_bb = df_ma_bb[df_ma_bb['Operation_bb']=='Vender']
+    ventas_ma = df_ma_bb[df_ma_bb['Operation'] == 'Vender']
+    ventas_bb = df_ma_bb[df_ma_bb['Operation_bb'] == 'Vender']
 
     ######
 
     fig_SLMA = go.Figure()
-    fig_SLMA.add_trace(go.Scatter(x= ventas_ma['time'], y= ventas_ma['close'],
-                        mode='lines',
-                        name='Close',
-                        line=dict(color='gold', width=4)))
+    fig_SLMA.add_trace(go.Scatter(x=ventas_ma['time'], y=ventas_ma['close'],
+                                  mode='lines',
+                                  name='Close',
+                                  line=dict(color='gold', width=4)))
 
-    fig_SLMA.add_trace(go.Scatter(x= ventas_ma['time'], y= ventas_ma['Stoploss'],
-                        mode='lines', name='Stoploss',
-                        line=dict(color='firebrick', width=3)))
+    fig_SLMA.add_trace(go.Scatter(x=ventas_ma['time'], y=ventas_ma['Stoploss'],
+                                  mode='lines', name='Stoploss',
+                                  line=dict(color='firebrick', width=3)))
 
-    fig_SLMA.add_trace(go.Scatter(x= ventas_ma['time'], y= ventas_ma['Takeprofit'],
-                        mode='lines', name='Takeprofit',
-                        line=dict(color='forestgreen', width=3)))
+    fig_SLMA.add_trace(go.Scatter(x= ventas_ma['time'], y=ventas_ma['Takeprofit'],
+                                  mode='lines', name='Takeprofit',
+                                  line=dict(color='forestgreen', width=3)))
     # Edit the layout
-    fig_SLMA.update_layout(title='Close vs Stoploss',
-                    xaxis_title='Date',
-                    yaxis_title='Values')
+    fig_SLMA.update_layout(title='Close vs Stoploss & Take Profit Moving Average',
+                           xaxis_title='Date',
+                           yaxis_title='Values')
     
     #####
     fig_SLBB = go.Figure()
-    fig_SLBB.add_trace(go.Scatter(x= ventas_bb['time'], y= ventas_bb['close'],
-                        mode='lines',
-                        name='Close',
-                        line=dict(color='gold', width=4)))
+    fig_SLBB.add_trace(go.Scatter(x=ventas_bb['time'], y=ventas_bb['close'],
+                                  mode='lines',
+                                  name='Close',
+                                  line=dict(color='gold', width=4)))
 
-    fig_SLBB.add_trace(go.Scatter(x= ventas_bb['time'], y= ventas_bb['Stoploss_bb'],
-                        mode='lines', name='Stoploss',
-                        line=dict(color='firebrick', width=3)))
+    fig_SLBB.add_trace(go.Scatter(x=ventas_bb['time'], y=ventas_bb['Stoploss_bb'],
+                                  mode='lines', name='Stoploss',
+                                  line=dict(color='firebrick', width=3)))
 
-    fig_SLBB.add_trace(go.Scatter(x= ventas_bb['time'], y= ventas_bb['Takeprofit_bb'],
-                        mode='lines', name='Takeprofit',
-                        line=dict(color='forestgreen', width=3)))
+    fig_SLBB.add_trace(go.Scatter(x=ventas_bb['time'], y=ventas_bb['Takeprofit_bb'],
+                                  mode='lines', name='Takeprofit',
+                                  line=dict(color='forestgreen', width=3)))
     # Edit the layout
-    fig_SLBB.update_layout(title='Close vs Stoploss',
-                    xaxis_title='Date',
-                    yaxis_title='Values')
+    fig_SLBB.update_layout(title='Close vs Stoploss & Take Profit Boolinger Bands',
+                           xaxis_title='Date',
+                           yaxis_title='Values')
 
-    compras_ma = df_ma_bb[df_ma_bb['Operation']=='Comprar']
-    compras_bb = df_ma_bb[df_ma_bb['Operation_bb']=='Comprar']
+    compras_ma = df_ma_bb[df_ma_bb['Operation'] == 'Comprar']
+    compras_bb = df_ma_bb[df_ma_bb['Operation_bb'] == 'Comprar']
 
     fig_TPMA = go.Figure()
     fig_TPMA.add_trace(go.Scatter(x=compras_ma['time'], y=compras_ma['close'],
-                        mode='lines',
-                        name='Close',
-                        line=dict(color='olivedrab', width=4)))
+                                  mode='lines',
+                                  name='Close',
+                                  line=dict(color='olivedrab', width=4)))
 
     fig_TPMA.add_trace(go.Scatter(x=compras_ma['time'], y=compras_ma['Takeprofit'],
-                        mode='lines', name='Takeprofit',
-                        line=dict(color='darkorange', width=3)))
+                                  mode='lines', name='Takeprofit',
+                                  line=dict(color='darkorange', width=3)))
 
     fig_TPMA.add_trace(go.Scatter(x=compras_ma['time'], y=compras_ma['Stoploss'],
-                        mode='lines', name='Stoploss',
-                        line=dict(color='cadetblue', width=3)))
+                                  mode='lines', name='Stoploss',
+                                  line=dict(color='cadetblue', width=3)))
 
     # Edit the layout
     fig_TPMA.update_layout(title='Close vs Takeprofit',
-                    xaxis_title='Date',
-                    yaxis_title='Values')
+                           xaxis_title='Date',
+                           yaxis_title='Values')
     
     #####
     fig_TPBB = go.Figure()
     fig_TPBB.add_trace(go.Scatter(x=compras_bb['time'], y=compras_bb['close'],
-                        mode='lines',
-                        name='Close',
-                        line=dict(color='olivedrab', width=4)))
+                                  mode='lines',
+                                  name='Close',
+                                  line=dict(color='olivedrab', width=4)))
 
     fig_TPBB.add_trace(go.Scatter(x=compras_bb['time'], y=compras_bb['Takeprofit_bb'],
-                        mode='lines', name='Takeprofit',
-                        line=dict(color='darkorange', width=3)))
+                                  mode='lines', name='Takeprofit',
+                                  line=dict(color='darkorange', width=3)))
 
     fig_TPBB.add_trace(go.Scatter(x=compras_bb['time'], y=compras_bb['Stoploss_bb'],
-                        mode='lines', name='Stoploss',
-                        line=dict(color='cadetblue', width=3)))
+                                  mode='lines', name='Stoploss',
+                                  line=dict(color='cadetblue', width=3)))
 
     # Edit the layout
     fig_TPBB.update_layout(title='Close vs Takeprofit',
-                    xaxis_title='Date',
-                    yaxis_title='Values')
-
+                           xaxis_title='Date',
+                           yaxis_title='Values')
 
     return fig_precio.show(), fig_exposure.show(), fig_profacum.show(), fig_SLMA.show(), fig_TPBB.show()
     
 
-def PSO_Optimization(constraints = (np.array([100, 0.01, 20, 0.05]),np.array([5000, 0.05, 100, 4])),
-                     dimensions_num = 4,  iterations = 10):
-
+def PSO_Optimization(constraints=(np.array([100, 0.01, 20, 0.05]), np.array([10000, 0.06, 100, 4])),
+                     dimensions_num=4,  iterations=10):
     # Time of execution
     start_time = time.time()
     # Set-up hyperparameters
-    options = {'c1': 2, 'c2': 2.2, 'w':0.73}
+    options = {'c1': 2, 'c2': 2.2, 'w': 0.73}
 
     # Call instance of PSO
     optimizer = ps.single.GlobalBestPSO(n_particles=30, dimensions=dimensions_num, options=options, bounds=constraints)
@@ -794,15 +780,15 @@ def PSO_Optimization(constraints = (np.array([100, 0.01, 20, 0.05]),np.array([50
 
     # Graficar
 
-    fig = go.Figure([go.Scatter( y= np.array(optimizer.cost_history)*-1,
-                            line = dict(color='deepskyblue', width=3))])
+    fig = go.Figure([go.Scatter(y=np.array(optimizer.cost_history)*-1,
+                                line=dict(color='deepskyblue', width=3))])
     fig.update_layout(title='Optimizer',
-                    xaxis_title='Iterations',
-                    yaxis_title='Sharpe')
+                      xaxis_title='Iterations',
+                      yaxis_title='Profit accum')
     
     final_time = time.time() - start_time
-
-    return -cost, pos, final_time , fig.show()
+    print(final_time)
+    return -cost, pos, fig.show()
 
 
 
